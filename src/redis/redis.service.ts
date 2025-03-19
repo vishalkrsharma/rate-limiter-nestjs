@@ -9,7 +9,21 @@ export class RedisService {
     this.client = createClient({
       url: 'redis://localhost:6379',
     });
-    await this.client.connect();
+
+    this.client.on('error', (error) => {
+      console.error('Redis error:', error);
+    });
+
+    this.client.on('error', (err) => {
+      console.error('❌ Redis Connection Error:', err);
+    });
+
+    try {
+      await this.client.connect();
+      console.log('✅ Connected to Redis');
+    } catch (error) {
+      console.error('❌ Failed to connect to Redis:', error);
+    }
   }
 
   async setKey(key: string, value: string, ttl: number) {
