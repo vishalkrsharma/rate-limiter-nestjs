@@ -7,7 +7,10 @@ export class RedisService {
 
   async onModuleInit() {
     this.client = createClient({
-      url: 'redis://localhost:6379',
+      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      socket: {
+        tls: process.env.REDIS_TLS === 'true',
+      },
     });
 
     this.client.on('error', (error) => {
