@@ -1,85 +1,134 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🚀 NestJS Rate Limiter with Redis
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 📌 Description
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This project is a **Rate Limiter** built using **NestJS** and **Redis**. It limits the number of API requests per IP address within a given time frame using NestJS's built-in **ThrottlerModule** and Redis for distributed rate limiting.
 
-## Description
+## 🎯 Features
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- 🛠 **Rate Limiting**: Restricts excessive API calls from a single client.
+- 🔥 **Redis Integration**: Uses Redis as a distributed store for managing request limits.
+- ⚡ **NestJS Throttler**: Implements rate limiting efficiently.
+- 🌍 **Deployed on Render**: Easily deployable and scalable.
 
-## Project setup
+---
 
-```bash
-$ pnpm install
+## 📦 Installation
+
+### 1️⃣ Clone the repository
+
+```sh
+git clone https://github.com/YOUR_USERNAME/rate-limiter-nestjs.git
+cd rate-limiter-nestjs
 ```
 
-## Compile and run the project
+### 2️⃣ Install dependencies
 
-```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+```sh
+pnpm install
 ```
 
-## Run tests
+### 3️⃣ Setup Environment Variables
 
-```bash
-# unit tests
-$ pnpm run test
+Create a `.env` file in the root directory:
 
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+```sh
+REDIS_URL=redis://your-redis-instance-url:6379
 ```
 
-## Resources
+### 4️⃣ Start Redis Locally (Optional, for local development)
 
-Check out a few resources that may come in handy when working with NestJS:
+Ensure you have Redis installed and running:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```sh
+redis-server
+```
 
-## Support
+---
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## 🚀 Running the Application
 
-## Stay in touch
+### 1️⃣ Development Mode
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```sh
+pnpm run start:dev
+```
 
-## License
+### 2️⃣ Production Mode
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```sh
+pnpm run build
+pnpm run start:prod
+```
+
+---
+
+## 🛠 API Endpoints
+
+### 1️⃣ Rate-Limited Endpoint
+
+```http
+GET /
+```
+
+**Response:**
+
+```json
+{
+  "message": "This route is rate-limited"
+}
+```
+
+💡 **Rate Limit:** Only 10 requests per minute allowed per IP.
+
+---
+
+## 🚀 Deploy on Render
+
+### 1️⃣ Push Code to GitHub
+
+```sh
+git add .
+git commit -m "Initial commit"
+git push origin main
+```
+
+### 2️⃣ Deploy on [Render](https://render.com)
+
+1. Create a **New Web Service**.
+2. Connect to GitHub and select this repository.
+3. Set **Build Command**:
+   ```sh
+   pnpm install && pnpm run build
+   ```
+4. Set **Start Command**:
+   ```sh
+   pnpm run start:prod
+   ```
+5. Add **Environment Variables**:
+   ```sh
+   REDIS_URL=redis://your-redis-instance-url:6379
+   ```
+6. Click **Deploy**.
+
+---
+
+## 📜 License
+
+This project is licensed under the **MIT License**.
+
+---
+
+## 🤝 Contributing
+
+Pull requests are welcome! For major changes, please open an issue first to discuss.
+
+📧 **Contact:** [your.email@example.com](mailto:your.email@example.com)
+
+---
+
+## 💖 Acknowledgments
+
+- [NestJS](https://nestjs.com/)
+- [Redis](https://redis.io/)
+- [Render](https://render.com/) for deployment.
