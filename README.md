@@ -2,7 +2,7 @@
 
 ## 📌 Description
 
-This project is a **Rate Limiter** built using **NestJS** and **Redis**. It limits the number of API requests per IP address within a given time frame using NestJS's built-in **ThrottlerModule** and Redis for distributed rate limiting.
+This project is a **Rate Limiter** built using **NestJS** and **Redis**. It limits the number of API requests per IP address within a given time frame using Redis for distributed rate limiting.
 
 ## 🎯 Features
 
