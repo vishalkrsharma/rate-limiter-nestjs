@@ -1,22 +1,29 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Req, ForbiddenException } from '@nestjs/common';
 import { AppService } from './app.service';
-import { TokenBucketGaurd } from 'src/rate-limiter/token-bucket.gaurd';
-// import { LeakyBucketGuard } from 'src/rate-limiter/leaky-bucket.gaurd';
-// import { FixedWindowCounterGaurd } from 'src/rate-limiter/fixed-window-counter.gaurd';
-// import { SlidingWindowLogGuard } from 'src/rate-limiter/sliding-window-log.gaurd';
-// import { SlidingWindowCounterGuard } from 'src/rate-limiter/sliding-window-counter.gaurd';
+import { RateLimiterService } from './rate-limiter/rate-limiter.service';
+import { Request } from 'express';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly rateLimiterService: RateLimiterService,
+  ) {}
 
   @Get()
-  @UseGuards(TokenBucketGaurd)
-  // @UseGuards(LeakyBucketGuard)
-  // @UseGuards(FixedWindowCounterGaurd)
-  // @UseGuards(SlidingWindowLogGuard)
-  // @UseGuards(SlidingWindowCounterGuard)
-  getHello(): string {
+  async getHello(@Req() req: Request): Promise<string> {
+    const key = req.ip;
+
+    const allowed = await this.rateLimiterService.allowRequest('token-bucket', {
+      key,
+      capacity: 5,
+      refillRate: 1,
+    });
+
+    if (!allowed) {
+      throw new ForbiddenException('Too many requests');
+    }
+
     return this.appService.getHello();
   }
 }
