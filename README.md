@@ -1,134 +1,184 @@
-# 🚀 NestJS Rate Limiter with Redis
+# rate-limiter-nestjs
 
-## 📌 Description
+[![npm version](https://badge.fury.io/js/rate-limiter-nestjs.svg)](https://badge.fury.io/js/rate-limiter-nestjs)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-This project is a **Rate Limiter** built using **NestJS** and **Redis**. It limits the number of API requests per IP address within a given time frame using Redis for distributed rate limiting.
+A flexible and pluggable rate limiter module for NestJS applications powered by Redis. Supports multiple algorithms with simple configuration:
 
-## 🎯 Features
+- **Fixed Window Counter**
+- **Sliding Window Counter**
+- **Sliding Window Log**
+- **Token Bucket**
+- **Leaky Bucket**
 
-- 🛠 **Rate Limiting**: Restricts excessive API calls from a single client.
-- 🔥 **Redis Integration**: Uses Redis as a distributed store for managing request limits.
-- ⚡ **NestJS Throttler**: Implements rate limiting efficiently.
-- 🌍 **Deployed on Render**: Easily deployable and scalable.
-
----
-
-## 📦 Installation
-
-### 1️⃣ Clone the repository
-
-```sh
-git clone https://github.com/YOUR_USERNAME/rate-limiter-nestjs.git
-cd rate-limiter-nestjs
-```
-
-### 2️⃣ Install dependencies
-
-```sh
-pnpm install
-```
-
-### 3️⃣ Setup Environment Variables
-
-Create a `.env` file in the root directory:
-
-```sh
-REDIS_URL=redis://your-redis-instance-url:6379
-```
-
-### 4️⃣ Start Redis Locally (Optional, for local development)
-
-Ensure you have Redis installed and running:
-
-```sh
-redis-server
-```
+Perfect for APIs, microservices, and distributed systems.
 
 ---
 
-## 🚀 Running the Application
+## Installation
 
-### 1️⃣ Development Mode
-
-```sh
-pnpm run start:dev
+```bash
+npm install rate-limiter-nestjs
 ```
 
-### 2️⃣ Production Mode
+> **Note:** Make sure Redis is running and accessible.
 
-```sh
-pnpm run build
-pnpm run start:prod
+## Usage
+
+### 1. Import the Module
+
+```ts
+// app.module.ts
+import { Module } from '@nestjs/common';
+import { RateLimiterModule } from 'rate-limiter-nestjs';
+
+@Module({
+  imports: [RateLimiterModule],
+})
+export class AppModule {}
 ```
 
----
+### 2. Use in Controller/Service
 
-## 🛠 API Endpoints
+```ts
+// app.controller.ts
+import { Controller, Get, Req, ForbiddenException } from '@nestjs/common';
+import { RateLimiterService } from 'rate-limiter-nestjs';
+import { Request } from 'express';
 
-### 1️⃣ Rate-Limited Endpoint
+@Controller()
+export class AppController {
+  constructor(private rateLimiter: RateLimiterService) {}
 
-```http
-GET /
-```
+  @Get()
+  async handle(@Req() req: Request) {
+    const allowed = await this.rateLimiter.allowRequest('token-bucket', {
+      key: req.ip,
+      capacity: 5,
+      refillRate: 1,
+    });
 
-**Response:**
+    if (!allowed) throw new ForbiddenException('Too many requests');
 
-```json
-{
-  "message": "This route is rate-limited"
+    return 'Request allowed ✅';
+  }
 }
 ```
 
-💡 **Rate Limit:** Only 10 requests per minute allowed per IP.
+## API
 
----
+### `RateLimiterService.allowRequest(strategy: string, options: RateLimiterOptions): Promise<boolean>`
 
-## 🚀 Deploy on Render
+- `strategy`: One of `'fixed-window' | 'sliding-counter' | 'sliding-log' | 'token-bucket' | 'leaky-bucket'`
+- `options`: See below for per-strategy options
 
-### 1️⃣ Push Code to GitHub
+#### `RateLimiterOptions` interface
 
-```sh
-git add .
-git commit -m "Initial commit"
-git push origin main
+```
+interface RateLimiterOptions {
+  key: string; // IP or user ID
+  windowSize?: number; // e.g., 60 seconds
+  maxRequests?: number; // for window-based strategies
+  refillRate?: number; // for token bucket
+  capacity?: number; // for token bucket/leaky bucket
+  leakInterval?: number; // for leaky bucket
+}
 ```
 
-### 2️⃣ Deploy on [Render](https://render.com)
+## Available Strategies & Examples
 
-1. Create a **New Web Service**.
-2. Connect to GitHub and select this repository.
-3. Set **Build Command**:
-   ```sh
-   pnpm install && pnpm run build
-   ```
-4. Set **Start Command**:
-   ```sh
-   pnpm run start:prod
-   ```
-5. Add **Environment Variables**:
-   ```sh
-   REDIS_URL=redis://your-redis-instance-url:6379
-   ```
-6. Click **Deploy**.
+### Token Bucket
 
----
+```ts
+await rateLimiter.allowRequest('token-bucket', {
+  key: 'user-ip',
+  capacity: 10,
+  refillRate: 2,
+});
+```
 
-## 📜 License
+### Leaky Bucket
 
-This project is licensed under the **MIT License**.
+```ts
+await rateLimiter.allowRequest('leaky-bucket', {
+  key: 'user-ip',
+  capacity: 10,
+  leakInterval: 1000, // ms
+  windowSize: 60, // seconds
+});
+```
 
----
+### Fixed Window Counter
 
-## 🤝 Contributing
+```ts
+await rateLimiter.allowRequest('fixed-window', {
+  key: 'user-ip',
+  windowSize: 60, // seconds
+  maxRequests: 10,
+});
+```
 
-Pull requests are welcome! For major changes, please open an issue first to discuss.
+### Sliding Window Log
 
-📧 **Contact:** [your.email@example.com](mailto:your.email@example.com)
+```ts
+await rateLimiter.allowRequest('sliding-log', {
+  key: 'user-ip',
+  windowSize: 60, // seconds
+  maxRequests: 10,
+});
+```
 
----
+### Sliding Window Counter
 
-## 💖 Acknowledgments
+```ts
+await rateLimiter.allowRequest('sliding-counter', {
+  key: 'user-ip',
+  windowSize: 60, // seconds
+  maxRequests: 10,
+});
+```
 
-- [NestJS](https://nestjs.com/)
-- [Redis](https://redis.io/)
-- [Render](https://render.com/) for deployment.
+## Redis Configuration
+
+Set the `REDIS_URL` and `REDIS_TLS` in a `.env` file or environment variables. **`REDIS_URL` is required for the module to connect to Redis.**
+
+```
+REDIS_URL=redis://localhost:6379
+REDIS_TLS=false
+```
+
+## Project Structure
+
+```
+src/
+├── index.ts
+├── app.controller.ts
+├── app.module.ts
+├── app.service.ts
+├── main.ts
+├── interfaces/
+│   └── rate-limiter.interface.ts
+├── strategies/
+│   ├── fixed-window-counter.strategy.ts
+│   ├── leaky-bucket.strategy.ts
+│   ├── sliding-window-counter.strategy.ts
+│   ├── sliding-window-log.strategy.ts
+│   └── token-bucket.strategy.ts
+├── redis/
+│   └── redis.service.ts
+└── rate-limiter/
+    ├── rate-limiter.module.ts
+    └── rate-limiter.service.ts
+```
+
+## Contributing
+
+Contributions, issues and feature requests are welcome! Feel free to open an issue or submit a pull request.
+
+## Author
+
+- **vishalkrsharma**
+
+## License
+
+This project is [MIT](LICENSE) licensed.
