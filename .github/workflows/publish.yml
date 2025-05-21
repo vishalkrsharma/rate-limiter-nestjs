@@ -19,11 +19,11 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org/'
 
-      - name: Install dependencies
-        run: npm install
-
       - name: Install NestJS CLI and SWC CLI globally
         run: npm install -g @nestjs/cli @swc/cli
+
+      - name: Install dependencies
+        run: npm install
 
       - name: Build
         run: npm run build
