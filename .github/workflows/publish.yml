@@ -22,6 +22,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install NestJS CLI and SWC CLI globally
+        run: npm install -g @nestjs/cli @swc/cli
+
       - name: Build
         run: npm run build
 
