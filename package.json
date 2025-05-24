@@ -16,7 +16,8 @@
     "middleware"
   ],
   "scripts": {
-    "build": "nest build && tsc --emitDeclarationOnly --declaration --outDir dist",
+    "build": "tsc -p tsconfig.build.json",
+    "build:nest": "nest build && tsc --emitDeclarationOnly --declaration --outDir dist",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
