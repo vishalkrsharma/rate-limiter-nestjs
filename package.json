@@ -1,6 +1,6 @@
 {
   "name": "rate-limiter-nestjs",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "",
   "author": "vishalkrsharma",
   "license": "MIT",
@@ -16,7 +16,7 @@
     "middleware"
   ],
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && tsc --emitDeclarationOnly --declaration --outDir dist",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
