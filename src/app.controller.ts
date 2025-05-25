@@ -12,10 +12,8 @@ export class AppController {
 
   @Get()
   async getHello(@Req() req: Request): Promise<string> {
-    const key = req.ip;
-
     const allowed = await this.rateLimiterService.allowRequest('token-bucket', {
-      key,
+      key: req.ip || 'default',
       capacity: 5,
       refillRate: 1,
     });
