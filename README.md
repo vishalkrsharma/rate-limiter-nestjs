@@ -1,98 +1,160 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# rate-limiter-nestjs
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+[![npm version](https://badge.fury.io/js/rate-limiter-nestjs.svg)](https://badge.fury.io/js/rate-limiter-nestjs)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+A flexible and pluggable rate limiter module for NestJS applications powered by Redis. Supports multiple algorithms with simple configuration:
 
-## Description
+- **Fixed Window Counter**
+- **Sliding Window Counter**
+- **Sliding Window Log**
+- **Token Bucket**
+- **Leaky Bucket**
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Perfect for APIs, microservices, and distributed systems.
 
-## Project setup
+---
+
+## Installation
 
 ```bash
-$ pnpm install
+npm install rate-limiter-nestjs
 ```
 
-## Compile and run the project
+> **Note:** Make sure Redis is running and accessible.
 
-```bash
-# development
-$ pnpm run start
+## Usage
 
-# watch mode
-$ pnpm run start:dev
+### 1. Import the Module
 
-# production mode
-$ pnpm run start:prod
+```ts
+// app.module.ts
+import { Module } from '@nestjs/common';
+import { RateLimiterModule } from 'rate-limiter-nestjs';
+
+@Module({
+  imports: [RateLimiterModule],
+})
+export class AppModule {}
 ```
 
-## Run tests
+### 2. Use in Controller/Service
 
-```bash
-# unit tests
-$ pnpm run test
+```ts
+// app.controller.ts
+import { Controller, Get, Req, ForbiddenException } from '@nestjs/common';
+import { RateLimiterService } from 'rate-limiter-nestjs';
+import { Request } from 'express';
 
-# e2e tests
-$ pnpm run test:e2e
+@Controller()
+export class AppController {
+  constructor(private rateLimiter: RateLimiterService) {}
 
-# test coverage
-$ pnpm run test:cov
+  @Get()
+  async handle(@Req() req: Request) {
+    const allowed = await this.rateLimiter.allowRequest('token-bucket', {
+      key: req.ip,
+      capacity: 5,
+      refillRate: 1,
+    });
+
+    if (!allowed) throw new ForbiddenException('Too many requests');
+
+    return 'Request allowed ✅';
+  }
+}
 ```
 
-## Deployment
+## API
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### `RateLimiterService.allowRequest(strategy: string, options: RateLimiterOptions): Promise<boolean>`
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+- `strategy`: One of `'fixed-window' | 'sliding-counter' | 'sliding-log' | 'token-bucket' | 'leaky-bucket'`
+- `options`: See below for per-strategy options
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+#### `RateLimiterOptions` interface
+
+```
+interface RateLimiterOptions {
+  key: string; // IP or user ID
+  windowSize?: number; // e.g., 60 seconds
+  maxRequests?: number; // for window-based strategies
+  refillRate?: number; // for token bucket
+  capacity?: number; // for token bucket/leaky bucket
+  leakInterval?: number; // for leaky bucket
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Available Strategies & Examples
 
-## Resources
+### Token Bucket
 
-Check out a few resources that may come in handy when working with NestJS:
+```ts
+await rateLimiter.allowRequest('token-bucket', {
+  key: 'user-ip',
+  capacity: 10,
+  refillRate: 2,
+});
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Leaky Bucket
 
-## Support
+```ts
+await rateLimiter.allowRequest('leaky-bucket', {
+  key: 'user-ip',
+  capacity: 10,
+  leakInterval: 1000, // ms
+  windowSize: 60, // seconds
+});
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Fixed Window Counter
 
-## Stay in touch
+```ts
+await rateLimiter.allowRequest('fixed-window', {
+  key: 'user-ip',
+  windowSize: 60, // seconds
+  maxRequests: 10,
+});
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Sliding Window Log
+
+```ts
+await rateLimiter.allowRequest('sliding-log', {
+  key: 'user-ip',
+  windowSize: 60, // seconds
+  maxRequests: 10,
+});
+```
+
+### Sliding Window Counter
+
+```ts
+await rateLimiter.allowRequest('sliding-counter', {
+  key: 'user-ip',
+  windowSize: 60, // seconds
+  maxRequests: 10,
+});
+```
+
+## Redis Configuration
+
+Set the `REDIS_URL` and `REDIS_TLS` in a `.env` file or environment variables. **`REDIS_URL` is required for the module to connect to Redis.**
+
+```
+REDIS_URL=redis://localhost:6379
+REDIS_TLS=false
+```
+
+## Contributing
+
+Contributions, issues and feature requests are welcome! Feel free to open an issue or submit a pull request.
+
+## Author
+
+- **vishalkrsharma**
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is [MIT](LICENSE) licensed.
