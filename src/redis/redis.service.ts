@@ -8,17 +8,10 @@ export class RedisService {
   async onModuleInit() {
     this.client = createClient({
       url: process.env.REDIS_URL || 'redis://localhost:6379',
-      socket: {
-        tls: process.env.REDIS_TLS === 'true',
-      },
     });
 
     this.client.on('error', (error) => {
       console.error('Redis error:', error);
-    });
-
-    this.client.on('error', (err) => {
-      console.error('Redis Connection Error:', err);
     });
 
     try {
