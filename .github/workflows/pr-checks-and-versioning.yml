@@ -4,11 +4,12 @@ on:
   pull_request:
     branches:
       - master
+    types: [opened, synchronize, closed]
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: github.head_ref == 'dev'
+    if: github.head_ref == 'dev' && github.event.action != 'closed'
     permissions:
       contents: write
 
@@ -34,6 +35,7 @@ jobs:
         run: pnpm build
 
       - name: Bump version
+        if: github.event.action == 'opened'
         run: |
           # Get the PR title
           PR_TITLE="${{ github.event.pull_request.title }}"
@@ -59,3 +61,43 @@ jobs:
         run: pnpm publish --access public --no-git-checks --dry-run
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  undo-bump-on-close:
+    runs-on: ubuntu-latest
+    # Only run when the PR is closed
+    if: github.head_ref == 'dev' && github.event.action == 'closed'
+    permissions:
+      contents: write # Grant write permissions to push to the head branch
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Checkout the head branch to revert the commit on it
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Find bump commit and revert
+        id: revert_commit
+        run: |
+          # Find the latest commit by github-actions with a message starting with 'v'
+          # This assumes the bump commit message starts with 'v' (e.g., v1.0.0)
+          BUMP_COMMIT_HASH=$(git log --author="github-actions" --format="%H" -n 1 --grep="^v")
+
+          if [ -z "$BUMP_COMMIT_HASH" ]; then
+            echo "No bump commit found by github-actions starting with 'v'. Nothing to revert."
+            echo "::set-output name=reverted::false"
+          else
+            echo "Found bump commit: $BUMP_COMMIT_HASH"
+            # Revert the commit
+            git revert -m 1 $BUMP_COMMIT_HASH --no-edit
+            echo "::set-output name=reverted::true"
+          fi
+
+      - name: Push revert commit
+        if: steps.revert_commit.outputs.reverted == 'true'
+        run: git push
