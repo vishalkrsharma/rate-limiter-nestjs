@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, edited, reopened, synchronize]
     branches:
-      - dev # Only run this check for PRs targeting the dev branch
+      - dev
 
 jobs:
   validate-title:
