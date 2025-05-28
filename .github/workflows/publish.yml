@@ -1,15 +1,13 @@
 name: Publish to npm
 
 on:
-  pull_request:
+  push:
     branches:
       - master
-    types: [closed]
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'dev'
     permissions:
       contents: write
       packages: write
@@ -17,7 +15,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 0
+
+      - name: Get PR title from last commit
+        id: get_pr_title
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "commit_message=$COMMIT_MSG" >> $GITHUB_OUTPUT
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -37,19 +41,20 @@ jobs:
       - name: Dry run publish
         run: pnpm publish --access public --no-git-checks --dry-run
 
-      - name: Bump version based on PR title
+      - name: Bump version based on commit message
+        id: bump_version
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
+          COMMIT_MSG="${{ steps.get_pr_title.outputs.commit_message }}"
           VERSION_TYPE="patch"
 
-          if [[ "$PR_TITLE" =~ ^major: ]]; then
+          if [[ "$COMMIT_MSG" =~ ^major: ]]; then
             VERSION_TYPE="major"
-          elif [[ "$PR_TITLE" =~ ^minor: ]]; then
+          elif [[ "$COMMIT_MSG" =~ ^minor: ]]; then
             VERSION_TYPE="minor"
-          elif [[ "$PR_TITLE" =~ ^patch: ]]; then
+          elif [[ "$COMMIT_MSG" =~ ^patch: ]]; then
             VERSION_TYPE="patch"
           else
-            echo "::error::PR title must start with major:, minor:, or patch:"
+            echo "::error::Commit message must start with major:, minor:, or patch:"
             exit 1
           fi
 
@@ -59,7 +64,7 @@ jobs:
           git config user.email "github-actions@github.com"
           pnpm version ${VERSION_TYPE}
           NEW_VERSION=$(node -p "require('./package.json').version")
-          echo "::set-output name=new_version::$NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           git push origin master --follow-tags
 
       - name: Create GitHub Release
