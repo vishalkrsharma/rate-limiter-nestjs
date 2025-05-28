@@ -1,15 +1,18 @@
 name: Publish to npm
 
 on:
-  pull_request_target:
-    types: [closed]
+  pull_request:
     branches:
       - master
+    types: [closed]
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'dev'
+    permissions:
+      contents: write
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
