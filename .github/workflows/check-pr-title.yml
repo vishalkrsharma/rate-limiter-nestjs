@@ -1,0 +1,24 @@
+name: Check PR Title Format
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+    branches:
+      - dev # Only run this check for PRs targeting the dev branch
+
+jobs:
+  validate-title:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check PR title format
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+
+          if [[ "$PR_TITLE" =~ ^(major|minor|patch): ]]; then
+            echo "✅ PR title format is valid: $PR_TITLE"
+          else
+            echo "❌ Invalid PR title format: $PR_TITLE"
+            echo "PR title must start with one of: 'major:', 'minor:', or 'patch:'"
+            exit 1
+          fi
