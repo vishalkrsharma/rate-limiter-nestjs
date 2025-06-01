@@ -40,7 +40,7 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Dry run publish
+      - name: Dry run publish check
         run: pnpm publish --access public --no-git-checks --dry-run
 
       - name: Bump version based on commit message
