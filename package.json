@@ -14,7 +14,8 @@
     "nestjs",
     "rate-limiter",
     "redis",
-    "middleware"
+    "middleware",
+    "typescript"
   ],
   "scripts": {
     "build": "nest build",
