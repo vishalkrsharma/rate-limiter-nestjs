@@ -75,21 +75,6 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           git push origin master --follow-tags
 
-      - name: Extract Release Description
-        id: extract_description
-        run: |
-          FULL_MESSAGE="${{ steps.get_pr_title.outputs.commit_message }}"
-          # Use awk to get the part after the first newline block
-          RELEASE_DESC=$(echo "$FULL_MESSAGE" | awk 'BEGIN{RS="\n\n"} NR==2 {print}')
-          # Handle cases where there is no description block
-          if [ -z "$RELEASE_DESC" ]; then
-            RELEASE_DESC=""
-          fi
-          # Escape quotes for output if necessary - although typically not needed for release body
-          # echo "release_description=${RELEASE_DESC}" >> "$GITHUB_OUTPUT"
-          # A simpler way to set output
-          echo "::set-output name=release_description::${RELEASE_DESC}"
-
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -98,7 +83,8 @@ jobs:
         with:
           tag_name: v${{ steps.bump_version.outputs.new_version }}
           release_name: Release v${{ steps.bump_version.outputs.new_version }}
-          body: ${{ steps.extract_description.outputs.release_description }}
+          body: |-
+            Release version v${{ steps.bump_version.outputs.new_version }}
           draft: false
           prerelease: false
 
