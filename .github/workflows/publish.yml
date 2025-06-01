@@ -21,6 +21,8 @@ jobs:
         id: get_pr_title
         run: |
           COMMIT_MSG=$(git log -1 --pretty=%B)
+          # Remove any newlines and trim whitespace
+          COMMIT_MSG=$(echo "$COMMIT_MSG" | tr -d '\n' | xargs)
           echo "commit_message=$COMMIT_MSG" >> $GITHUB_OUTPUT
 
       - name: Set up Node.js
@@ -47,14 +49,18 @@ jobs:
           COMMIT_MSG="${{ steps.get_pr_title.outputs.commit_message }}"
           VERSION_TYPE="patch"
 
-          if [[ "$COMMIT_MSG" =~ ^major: ]]; then
+          # Convert to lowercase for case-insensitive matching
+          COMMIT_MSG_LOWER=$(echo "$COMMIT_MSG" | tr '[:upper:]' '[:lower:]')
+
+          if [[ "$COMMIT_MSG_LOWER" =~ ^major: ]]; then
             VERSION_TYPE="major"
-          elif [[ "$COMMIT_MSG" =~ ^minor: ]]; then
+          elif [[ "$COMMIT_MSG_LOWER" =~ ^minor: ]]; then
             VERSION_TYPE="minor"
-          elif [[ "$COMMIT_MSG" =~ ^patch: ]]; then
+          elif [[ "$COMMIT_MSG_LOWER" =~ ^patch: ]]; then
             VERSION_TYPE="patch"
           else
             echo "::error::Commit message must start with major:, minor:, or patch:"
+            echo "::error::Current commit message: $COMMIT_MSG"
             exit 1
           fi
 
