@@ -81,7 +81,7 @@ jobs:
         with:
           tag_name: v${{ steps.bump_version.outputs.new_version }}
           release_name: Release v${{ steps.bump_version.outputs.new_version }}
-          body: ${{ steps.get_pr_title.outputs.commit_message }}
+          body: ${{ steps.get_pr_title.outputs.commit_description }}
           draft: false
           prerelease: false
 
