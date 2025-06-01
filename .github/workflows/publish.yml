@@ -20,10 +20,26 @@ jobs:
       - name: Get PR title from last commit
         id: get_pr_title
         run: |
+          # Get the full commit message
           COMMIT_MSG=$(git log -1 --pretty=%B)
-          # Remove any newlines and trim whitespace
-          COMMIT_MSG=$(echo "$COMMIT_MSG" | tr -d '\n' | xargs)
-          echo "commit_message=$COMMIT_MSG" >> $GITHUB_OUTPUT
+
+          # Extract title (first line) and description (rest of the lines)
+          COMMIT_TITLE=$(echo "$COMMIT_MSG" | head -n 1)
+          # Use tail -n +2 to get lines from the second line onwards
+          COMMIT_DESC=$(echo "$COMMIT_MSG" | tail -n +2)
+
+          # Remove any newlines and trim whitespace from description
+          # Check if COMMIT_DESC is empty before processing
+          if [ -z "$COMMIT_DESC" ]; then
+            # If description is empty, use an empty string
+            COMMIT_DESC=""
+          else
+            # Otherwise, process the description
+            COMMIT_DESC=$(echo "$COMMIT_DESC" | tr -d '\n' | xargs)
+          fi
+
+          echo "commit_message=${COMMIT_MSG}" >> "$GITHUB_OUTPUT"
+          echo "commit_description=${COMMIT_DESC}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -81,7 +97,7 @@ jobs:
         with:
           tag_name: v${{ steps.bump_version.outputs.new_version }}
           release_name: Release v${{ steps.bump_version.outputs.new_version }}
-          body: ${{ steps.get_pr_title.outputs.commit_message }}
+          body: ${{ steps.get_pr_title.outputs.commit_description }}
           draft: false
           prerelease: false
 
