@@ -50,17 +50,19 @@ jobs:
           VERSION_TYPE="patch"
 
           # Convert to lowercase for case-insensitive matching
-          COMMIT_MSG_LOWER=$(echo "$COMMIT_MSG" | tr '[:upper:]' '[:lower:]')
+          # Get the first line of the commit message for version bumping logic
+          COMMIT_TITLE=$(echo "$COMMIT_MSG" | head -n 1)
+          COMMIT_TITLE_LOWER=$(echo "$COMMIT_TITLE" | tr '[:upper:]' '[:lower:]')
 
-          if [[ "$COMMIT_MSG_LOWER" =~ ^major: ]]; then
+          if [[ "$COMMIT_TITLE_LOWER" =~ ^major: ]]; then
             VERSION_TYPE="major"
-          elif [[ "$COMMIT_MSG_LOWER" =~ ^minor: ]]; then
+          elif [[ "$COMMIT_TITLE_LOWER" =~ ^minor: ]]; then
             VERSION_TYPE="minor"
-          elif [[ "$COMMIT_MSG_LOWER" =~ ^patch: ]]; then
+          elif [[ "$COMMIT_TITLE_LOWER" =~ ^patch: ]]; then
             VERSION_TYPE="patch"
           else
             echo "::error::Commit message must start with major:, minor:, or patch:"
-            echo "::error::Current commit message: $COMMIT_MSG"
+            echo "::error::Current commit title: $COMMIT_TITLE"
             exit 1
           fi
 
@@ -73,6 +75,21 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           git push origin master --follow-tags
 
+      - name: Extract Release Description
+        id: extract_description
+        run: |
+          FULL_MESSAGE="${{ steps.get_pr_title.outputs.commit_message }}"
+          # Use awk to get the part after the first newline block
+          RELEASE_DESC=$(echo "$FULL_MESSAGE" | awk 'BEGIN{RS="\n\n"} NR==2 {print}')
+          # Handle cases where there is no description block
+          if [ -z "$RELEASE_DESC" ]; then
+            RELEASE_DESC=""
+          fi
+          # Escape quotes for output if necessary - although typically not needed for release body
+          # echo "release_description=${RELEASE_DESC}" >> "$GITHUB_OUTPUT"
+          # A simpler way to set output
+          echo "::set-output name=release_description::${RELEASE_DESC}"
+
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -81,7 +98,7 @@ jobs:
         with:
           tag_name: v${{ steps.bump_version.outputs.new_version }}
           release_name: Release v${{ steps.bump_version.outputs.new_version }}
-          body: ${{ steps.get_pr_title.outputs.commit_message }}
+          body: ${{ steps.extract_description.outputs.release_description }}
           draft: false
           prerelease: false
 
